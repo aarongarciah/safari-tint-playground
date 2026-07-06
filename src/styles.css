@@ -27,7 +27,7 @@
 
 :root[data-theme='dark'] {
   color: #ffffff;
-  background-color: var(--page-bg, #000000);
+  background-color: var(--page-bg, #171717);
 }
 
 * {
@@ -207,6 +207,11 @@ input:focus-visible {
   font-size: 0.9375rem;
   line-height: 1.5;
   color: oklch(55.6% 0 0);
+}
+
+:root[data-theme='dark'] .hero p,
+:root[data-theme='dark'] .hero ul {
+  color: oklch(70.8% 0 0);
 }
 
 .panel {
