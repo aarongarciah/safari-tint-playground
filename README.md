@@ -28,4 +28,4 @@ The app automatically creates a room ID if the URL does not already have one. UR
 ?id=<room-id>
 ```
 
-The room state is stored in the local Cloudflare Durable Object. The URL does not store playground settings.
+The room state is stored in the local Cloudflare Durable Object.
