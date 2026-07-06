@@ -1,9 +1,15 @@
 import { Drawer as DrawerPrimitive } from '@base-ui/react/drawer';
 import styles from './Drawer.module.css';
 
-export function Drawer({ onOpenChange }: { onOpenChange?: (open: boolean) => void }) {
+export function Drawer({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   return (
-    <DrawerPrimitive.Root onOpenChange={onOpenChange}>
+    <DrawerPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DrawerPrimitive.Trigger className="button">Open drawer</DrawerPrimitive.Trigger>
       <DrawerPrimitive.Portal>
         <DrawerPrimitive.Backdrop className={styles.Backdrop} />

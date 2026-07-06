@@ -17,10 +17,10 @@ export type PlaygroundState = {
   footerVisible: boolean;
   footerFixed: boolean;
   footerBottom: number;
+  drawerOpen: boolean;
+  dialogOpen: boolean;
   colors: Record<Mode, ModeColors>;
 };
-
-const storageKey = 'safari-tint-playground-state';
 
 const defaultModeColors: Record<Mode, ModeColors> = {
   light: {
@@ -45,8 +45,10 @@ export const defaultState: PlaygroundState = {
   headerTop: 0,
   headerTransparentParent: false,
   footerVisible: true,
-  footerFixed: true,
+  footerFixed: false,
   footerBottom: 0,
+  drawerOpen: false,
+  dialogOpen: false,
   colors: defaultModeColors,
 };
 
@@ -68,6 +70,8 @@ const booleanParams = {
   headerTransparent: 'headerTransparentParent',
   footer: 'footerVisible',
   footerFixed: 'footerFixed',
+  drawerOpen: 'drawerOpen',
+  dialogOpen: 'dialogOpen',
 } as const satisfies Record<string, keyof PlaygroundState>;
 
 function isMode(value: unknown): value is Mode {
@@ -84,15 +88,6 @@ function normalizeDistance(value: unknown) {
   return Number.isFinite(numberValue) ? Math.max(0, Math.round(numberValue)) : 0;
 }
 
-function readStoredState(): Partial<PlaygroundState> | null {
-  try {
-    const raw = window.localStorage.getItem(storageKey);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
 function mergeState(source?: Partial<PlaygroundState> | null): PlaygroundState {
   const mode = isMode(source?.mode) ? source.mode : defaultState.mode;
 
@@ -107,6 +102,8 @@ function mergeState(source?: Partial<PlaygroundState> | null): PlaygroundState {
     footerVisible: source?.footerVisible ?? defaultState.footerVisible,
     footerFixed: source?.footerFixed ?? defaultState.footerFixed,
     footerBottom: normalizeDistance(source?.footerBottom),
+    drawerOpen: source?.drawerOpen ?? defaultState.drawerOpen,
+    dialogOpen: source?.dialogOpen ?? defaultState.dialogOpen,
     colors: {
       light: {
         ...defaultState.colors.light,
@@ -153,9 +150,7 @@ function readStateFromParams(params: URLSearchParams, base: PlaygroundState) {
 }
 
 export function readInitialState(): PlaygroundState {
-  const hasRoomId = new URLSearchParams(window.location.search).has('id');
-
-  return hasRoomId ? defaultState : mergeState(readStoredState());
+  return structuredClone(defaultState);
 }
 
 export function readStateFromQuery(query: string): PlaygroundState {
@@ -173,6 +168,8 @@ export function serializeState(state: PlaygroundState) {
   params.set('footer', state.footerVisible ? '1' : '0');
   params.set('footerFixed', state.footerFixed ? '1' : '0');
   params.set('footerBottom', String(state.footerBottom));
+  params.set('drawerOpen', state.drawerOpen ? '1' : '0');
+  params.set('dialogOpen', state.dialogOpen ? '1' : '0');
   params.set('bgL', state.colors.light.page);
   params.set('bgD', state.colors.dark.page);
   params.set('headerL', state.colors.light.header);
@@ -184,13 +181,8 @@ export function serializeState(state: PlaygroundState) {
   return params.toString();
 }
 
-export function persistState(state: PlaygroundState) {
+export function persistState() {
   const roomId = new URLSearchParams(window.location.search).get('id');
-
-  if (!roomId) {
-    window.localStorage.setItem(storageKey, JSON.stringify(state));
-  }
-
   const query = roomId ? `?id=${roomId}` : '';
   const nextUrl = `${window.location.pathname}${query}${window.location.hash}`;
   window.history.replaceState(null, '', nextUrl);

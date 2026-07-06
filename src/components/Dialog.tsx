@@ -1,9 +1,15 @@
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import styles from './Dialog.module.css';
 
-export function Dialog({ onOpenChange }: { onOpenChange?: (open: boolean) => void }) {
+export function Dialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   return (
-    <DialogPrimitive.Root onOpenChange={onOpenChange}>
+    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Trigger className="button">Open dialog</DialogPrimitive.Trigger>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Backdrop className={styles.Backdrop} />

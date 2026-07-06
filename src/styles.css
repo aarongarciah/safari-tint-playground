@@ -56,6 +56,8 @@ input:focus-visible {
 
 .app {
   min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
   background-color: var(--page-bg);
   color: inherit;
 }
@@ -155,6 +157,7 @@ input:focus-visible {
 
 .shell {
   width: min(100%, var(--shell-max-width));
+  flex: 1;
   margin: 0 auto;
   padding: 5.5rem var(--page-inline-padding) 6rem;
 }
@@ -205,9 +208,9 @@ input:focus-visible {
   gap: 1rem;
 }
 
-.surface h2 {
+.surface-title {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.5;
 }

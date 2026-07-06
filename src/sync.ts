@@ -1,4 +1,5 @@
 const roomIdPattern = /^[A-Za-z0-9_-]{12,64}$/;
+const refreshMessage = '__refresh__';
 
 let socket: WebSocket | null = null;
 let queuedState: string | null = null;
@@ -32,6 +33,26 @@ export function ensureSyncRoomId() {
   return { roomId, created: true };
 }
 
+function getRemoteRefreshKey(roomId: string) {
+  return `remote-refresh:${roomId}`;
+}
+
+export function consumeRemoteRefresh(roomId: string) {
+  const key = getRemoteRefreshKey(roomId);
+  const value = window.sessionStorage.getItem(key);
+  window.sessionStorage.removeItem(key);
+
+  return value === '1';
+}
+
+export function wasPageReload() {
+  const navigation = window.performance.getEntriesByType('navigation')[0] as
+    | PerformanceNavigationTiming
+    | undefined;
+
+  return navigation?.type === 'reload';
+}
+
 export function connectSync(roomId: string, onState: (state: string) => void, onOpen?: () => void) {
   disconnectSync();
 
@@ -54,6 +75,12 @@ export function connectSync(roomId: string, onState: (state: string) => void, on
 
   nextSocket.addEventListener('message', (event) => {
     if (typeof event.data === 'string') {
+      if (event.data === refreshMessage) {
+        window.sessionStorage.setItem(getRemoteRefreshKey(roomId), '1');
+        window.location.reload();
+        return;
+      }
+
       onState(event.data);
     }
   });
@@ -74,6 +101,12 @@ export function sendState(serializedState: string) {
   }
 
   queuedState = serializedState;
+}
+
+export function refreshRoom() {
+  if (socket?.readyState === WebSocket.OPEN) {
+    socket.send(refreshMessage);
+  }
 }
 
 export function disconnectSync() {

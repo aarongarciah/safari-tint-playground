@@ -13,7 +13,14 @@ import {
   type Mode,
   type ModeColors,
 } from './state';
-import { connectSync, ensureSyncRoomId, sendState } from './sync';
+import {
+  connectSync,
+  consumeRemoteRefresh,
+  ensureSyncRoomId,
+  refreshRoom,
+  sendState,
+  wasPageReload,
+} from './sync';
 
 type Insets = {
   top: number | null;
@@ -238,11 +245,10 @@ function getResetState(mode: Mode) {
 export default function App() {
   const [state, setState] = useState(readInitialState);
   const [{ roomId: syncRoomId, created: createdSyncRoom }] = useState(ensureSyncRoomId);
-  const [openOverlays, setOpenOverlays] = useState({ drawer: false, dialog: false });
   const activeColors = state.colors[state.mode];
   const insets = useSafeAreaInsets(state.viewportFitCover);
   const oppositeMode: Mode = state.mode === 'light' ? 'dark' : 'light';
-  const overlayOpen = openOverlays.drawer || openOverlays.dialog;
+  const overlayOpen = state.drawerOpen || state.dialogOpen;
   const resetTarget = getResetState(state.mode);
   const canReset = JSON.stringify(state) !== JSON.stringify(resetTarget);
   const serializedState = serializeState(state);
@@ -250,12 +256,20 @@ export default function App() {
   const createdSyncRoomRef = useRef(createdSyncRoom);
   const canBroadcastSyncRef = useRef(false);
   const skipNextSyncBroadcastRef = useRef(false);
+  const shouldBroadcastReloadRef = useRef(wasPageReload() && !consumeRemoteRefresh(syncRoomId));
 
   useEffect(() => {
     latestSerializedStateRef.current = serializedState;
     applyStateToDocument(state);
-    persistState(state);
+    persistState();
   }, [serializedState, state]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty(
+      '--scrollbar-lock-width',
+      overlayOpen ? `${window.innerWidth - document.documentElement.clientWidth}px` : '0px',
+    );
+  }, [overlayOpen]);
 
   useEffect(() => {
     if (!syncRoomId) {
@@ -286,6 +300,11 @@ export default function App() {
         }
 
         canBroadcastSyncRef.current = true;
+
+        if (shouldBroadcastReloadRef.current) {
+          shouldBroadcastReloadRef.current = false;
+          refreshRoom();
+        }
       },
     );
   }, [syncRoomId]);
@@ -308,23 +327,8 @@ export default function App() {
   const setActiveColor = (colorKey: keyof ModeColors, value: string) => {
     setState((current) => setModeColor(current, colorKey, value));
   };
-  const setOverlayOpen = (overlay: keyof typeof openOverlays, open: boolean) => {
-    if (open && !overlayOpen) {
-      document.documentElement.style.setProperty(
-        '--scrollbar-lock-width',
-        `${window.innerWidth - document.documentElement.clientWidth}px`,
-      );
-    }
-
-    setOpenOverlays((current) => {
-      const next = { ...current, [overlay]: open };
-
-      if (!next.drawer && !next.dialog) {
-        document.documentElement.style.setProperty('--scrollbar-lock-width', '0px');
-      }
-
-      return next;
-    });
+  const setOverlayOpen = (overlay: 'drawerOpen' | 'dialogOpen', open: boolean) => {
+    setState((current) => ({ ...current, [overlay]: open }));
   };
   const resetState = () => {
     applyStateToDocument(resetTarget);
@@ -370,8 +374,8 @@ export default function App() {
             >
               <ColorSchemeIcon mode={oppositeMode} />
             </button>
-            <Drawer onOpenChange={(open) => setOverlayOpen('drawer', open)} />
-            <Dialog onOpenChange={(open) => setOverlayOpen('dialog', open)} />
+            <Drawer open={state.drawerOpen} onOpenChange={(open) => setOverlayOpen('drawerOpen', open)} />
+            <Dialog open={state.dialogOpen} onOpenChange={(open) => setOverlayOpen('dialogOpen', open)} />
             {canReset ? (
               <button
                 className="button reset-button"
@@ -473,7 +477,7 @@ export default function App() {
         </section>
 
         <section className="surface" aria-labelledby="surface-title">
-          <h2 id="surface-title">Safe area insets</h2>
+          <h2 className="surface-title" id="surface-title">Safe area insets</h2>
           <div className="safe-area-readout" aria-label="Safe area inset readout">
             <span className="readout-item readout-top" data-active={isInsetActive(insets.top)}>
               <code aria-label={describeInset('top')}>{formatInset(insets.top)}</code>

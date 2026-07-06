@@ -38,7 +38,6 @@
         } else {
           colorSchemeQuery.addListener(updateFavicon);
         }
-        const storageKey = 'safari-tint-playground-state';
         const defaults = {
           mode: 'light',
           viewportFitCover: false,
@@ -60,23 +59,14 @@
             },
           },
         };
-        const readStoredState = () => {
-          try {
-            return JSON.parse(localStorage.getItem(storageKey) || 'null');
-          } catch {
-            return null;
-          }
-        };
-        const params = new URLSearchParams(window.location.search);
-        const stored = params.has('id') ? null : readStoredState();
         const state = {
-          mode: stored?.mode || defaults.mode,
-          viewportFitCover: stored?.viewportFitCover || false,
-          headerTop: Math.max(0, Math.round(Number(stored?.headerTop ?? defaults.headerTop))),
-          footerBottom: Math.max(0, Math.round(Number(stored?.footerBottom ?? defaults.footerBottom))),
+          mode: defaults.mode,
+          viewportFitCover: false,
+          headerTop: defaults.headerTop,
+          footerBottom: defaults.footerBottom,
           colors: {
-            light: { ...defaults.colors.light, ...(stored?.colors?.light || {}) },
-            dark: { ...defaults.colors.dark, ...(stored?.colors?.dark || {}) },
+            light: { ...defaults.colors.light },
+            dark: { ...defaults.colors.dark },
           },
         };
         if (state.mode !== 'dark') {

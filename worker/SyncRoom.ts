@@ -3,6 +3,7 @@ import type { Env } from './types';
 
 const stateKey = 'state';
 const maxMessageLength = 4096;
+const refreshMessage = '__refresh__';
 
 export class SyncRoom extends DurableObject<Env> {
   async fetch(request: Request) {
@@ -34,6 +35,14 @@ export class SyncRoom extends DurableObject<Env> {
 
     if (message.length > maxMessageLength) {
       sender.close(1009, 'Message too large');
+      return;
+    }
+
+    if (message === refreshMessage) {
+      for (const socket of this.ctx.getWebSockets()) {
+        socket.send(message);
+      }
+
       return;
     }
 
