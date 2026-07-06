@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1"
+      data-managed-viewport
+    />
+    <meta
+      name="theme-color"
+      media="(prefers-color-scheme: light)"
+      content="#ffffff"
+      data-theme-color-light
+    />
+    <meta
+      name="theme-color"
+      media="(prefers-color-scheme: dark)"
+      content="#000000"
+      data-theme-color-dark
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" data-managed-favicon />
+    <title>Safari Tint Playground</title>
+    <script>
+      (() => {
+        const colorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const updateFavicon = () => {
+          const scheme = colorSchemeQuery.matches ? 'dark' : 'light';
+
+          document
+            .querySelector('[data-managed-favicon]')
+            ?.setAttribute('href', `/favicon-${scheme}.svg?v=${scheme}-${Date.now()}`);
+        };
+
+        updateFavicon();
+        if (colorSchemeQuery.addEventListener) {
+          colorSchemeQuery.addEventListener('change', updateFavicon);
+        } else {
+          colorSchemeQuery.addListener(updateFavicon);
+        }
+        const storageKey = 'safari-tint-playground-state';
+        const defaults = {
+          mode: 'light',
+          viewportFitCover: false,
+          headerTop: 0,
+          headerTransparentParent: false,
+          footerBottom: 0,
+          colors: {
+            light: {
+              page: '#ffffff',
+              header: '#ffffff',
+              footer: '#ffffff',
+              theme: '#ffffff',
+            },
+            dark: {
+              page: '#000000',
+              header: '#000000',
+              footer: '#000000',
+              theme: '#000000',
+            },
+          },
+        };
+        const isColor = (value) => /^#[0-9a-fA-F]{6}$/.test(value || '');
+        const readStoredState = () => {
+          try {
+            return JSON.parse(localStorage.getItem(storageKey) || 'null');
+          } catch {
+            return null;
+          }
+        };
+        const params = new URLSearchParams(window.location.search);
+        const hasUrlState = [
+          'mode',
+          'vfc',
+          'bgL',
+          'bgD',
+          'headerL',
+          'headerD',
+          'headerTop',
+          'headerTransparent',
+          'footerL',
+          'footerD',
+          'footerBottom',
+          'themeL',
+          'themeD',
+        ].some((key) => params.has(key));
+        const stored = hasUrlState ? null : readStoredState();
+        const state = {
+          mode: params.get('mode') || stored?.mode || defaults.mode,
+          viewportFitCover:
+            params.get('vfc') === '1' || (!hasUrlState && stored?.viewportFitCover) || false,
+          headerTop: Math.max(
+            0,
+            Math.round(Number(params.get('headerTop') ?? stored?.headerTop ?? defaults.headerTop)),
+          ),
+          footerBottom: Math.max(
+            0,
+            Math.round(Number(params.get('footerBottom') ?? stored?.footerBottom ?? defaults.footerBottom)),
+          ),
+          colors: {
+            light: { ...defaults.colors.light, ...(stored?.colors?.light || {}) },
+            dark: { ...defaults.colors.dark, ...(stored?.colors?.dark || {}) },
+          },
+        };
+        const colorParams = {
+          bgL: ['light', 'page'],
+          bgD: ['dark', 'page'],
+          headerL: ['light', 'header'],
+          headerD: ['dark', 'header'],
+          footerL: ['light', 'footer'],
+          footerD: ['dark', 'footer'],
+          themeL: ['light', 'theme'],
+          themeD: ['dark', 'theme'],
+        };
+        Object.entries(colorParams).forEach(([param, path]) => {
+          const value = params.get(param);
+          if (isColor(value)) {
+            state.colors[path[0]][path[1]] = value;
+          }
+        });
+        if (state.mode !== 'dark') {
+          state.mode = 'light';
+        }
+        const activeColors = state.colors[state.mode];
+        const root = document.documentElement;
+        root.dataset.theme = state.mode;
+        root.style.colorScheme = state.mode;
+        root.style.setProperty('--page-bg', activeColors.page);
+        root.style.setProperty('--header-bg', activeColors.header);
+        root.style.setProperty('--header-top', `${Number.isFinite(state.headerTop) ? state.headerTop : 0}px`);
+        root.style.setProperty('--footer-bg', activeColors.footer);
+        root.style.setProperty('--footer-bottom', `${Number.isFinite(state.footerBottom) ? state.footerBottom : 0}px`);
+        document
+          .querySelector('[data-managed-viewport]')
+          ?.setAttribute(
+            'content',
+            `width=device-width, initial-scale=1${state.viewportFitCover ? ', viewport-fit=cover' : ''}`,
+          );
+        document
+          .querySelector('[data-theme-color-light]')
+          ?.setAttribute('content', state.colors.light.theme);
+        document
+          .querySelector('[data-theme-color-dark]')
+          ?.setAttribute('content', state.colors.dark.theme);
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

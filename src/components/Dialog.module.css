@@ -1,0 +1,88 @@
+.Backdrop {
+  position: fixed;
+  min-height: 100dvh;
+  inset: 0;
+  background-color: black;
+  opacity: 0.2;
+  transition: opacity 150ms;
+}
+
+@supports (-webkit-touch-callout: none) {
+  .Backdrop {
+    position: absolute;
+  }
+}
+
+:global(:root[data-theme='dark']) .Backdrop {
+  opacity: 0.5;
+}
+
+.Backdrop[data-starting-style],
+.Backdrop[data-ending-style] {
+  opacity: 0;
+}
+
+.Popup {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 24rem;
+  max-width: calc(100vw - 3rem);
+  margin-top: -2rem;
+  padding: 1rem;
+  border: 1px solid oklch(14.5% 0 0deg);
+  background-color: white;
+  color: oklch(14.5% 0 0deg);
+  box-shadow: 0.25rem 0.25rem 0 rgb(0 0 0 / 12%);
+  transition:
+    transform 100ms ease-out,
+    opacity 100ms ease-out;
+}
+
+:global(:root[data-theme='dark']) .Popup {
+  border: 1px solid white;
+  background-color: oklch(14.5% 0 0deg);
+  color: white;
+  box-shadow: none;
+}
+
+.Popup[data-starting-style],
+.Popup[data-ending-style] {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.98);
+}
+
+.Intro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.Title {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 600;
+}
+
+.Description {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: oklch(43.9% 0 0deg);
+}
+
+:global(:root[data-theme='dark']) .Description {
+  color: oklch(70.8% 0 0deg);
+}
+
+.Actions {
+  display: flex;
+  justify-content: end;
+  gap: 0.75rem;
+}
