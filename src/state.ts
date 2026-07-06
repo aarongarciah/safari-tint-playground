@@ -77,8 +77,20 @@ function isMode(value: unknown): value is Mode {
   return value === 'light' || value === 'dark';
 }
 
-function isColor(value: unknown): value is string {
-  return typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value);
+export function normalizeColorInput(value: string) {
+  const trimmedValue = value.trim();
+
+  return trimmedValue || 'transparent';
+}
+
+export function isCssColor(value: unknown): value is string {
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  const color = normalizeColorInput(value);
+
+  return Boolean(window.CSS?.supports?.('color', color));
 }
 
 function normalizeDistance(value: unknown) {
@@ -126,8 +138,8 @@ function readStateFromParams(params: URLSearchParams, base: PlaygroundState) {
 
   Object.entries(colorParams).forEach(([param, [modeKey, colorKey]]) => {
     const value = params.get(param);
-    if (isColor(value)) {
-      next.colors[modeKey][colorKey] = value;
+    if (value !== null && isCssColor(value)) {
+      next.colors[modeKey][colorKey] = normalizeColorInput(value);
     }
   });
 

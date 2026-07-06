@@ -7,6 +7,8 @@ import {
   applyStateToDocument,
   cacheSerializedState,
   defaultState,
+  isCssColor,
+  normalizeColorInput,
   persistState,
   readInitialState,
   readStateFromQuery,
@@ -124,6 +126,26 @@ function ColorField({
   info?: React.ReactNode;
 }) {
   const id = useId();
+  const colorPickerId = useId();
+  const [draftValue, setDraftValue] = useState(value === 'transparent' ? '' : value);
+  const [isFocused, setIsFocused] = useState(false);
+  const normalizedDraftValue = normalizeColorInput(draftValue);
+  const validDraft = isCssColor(draftValue);
+  const nativePickerValue = /^#[0-9a-fA-F]{6}$/.test(value) ? value : '#000000';
+
+  useEffect(() => {
+    if (!isFocused) {
+      setDraftValue(value === 'transparent' ? '' : value);
+    }
+  }, [isFocused, value]);
+
+  const commitDraftValue = (nextValue: string) => {
+    const normalizedValue = normalizeColorInput(nextValue);
+
+    if (isCssColor(normalizedValue)) {
+      onChange(normalizedValue);
+    }
+  };
 
   return (
     <div className="field">
@@ -135,8 +157,42 @@ function ColorField({
           </InfoTip>
         ) : null}
       </span>
-      <input id={id} type="color" value={value} onChange={(event) => onChange(event.target.value)} />
-      <code>{value}</code>
+      <input
+        id={id}
+        className="color-text-input"
+        type="text"
+        value={draftValue}
+        placeholder="transparent"
+        aria-invalid={!validDraft}
+        onBlur={() => {
+          setIsFocused(false);
+          setDraftValue(
+            validDraft
+              ? (normalizedDraftValue === 'transparent' ? '' : normalizedDraftValue)
+              : (value === 'transparent' ? '' : value),
+          );
+        }}
+        onChange={(event) => {
+          const nextValue = event.target.value;
+
+          setDraftValue(nextValue);
+          commitDraftValue(nextValue);
+        }}
+        onFocus={() => setIsFocused(true)}
+      />
+      <span className="color-swatch" style={{ '--swatch-color': value } as React.CSSProperties}>
+        <input
+          id={colorPickerId}
+          className="color-picker-input"
+          type="color"
+          value={nativePickerValue}
+          aria-label={`Pick ${label}`}
+          onChange={(event) => {
+            setDraftValue(event.target.value);
+            onChange(event.target.value);
+          }}
+        />
+      </span>
     </div>
   );
 }
@@ -545,7 +601,8 @@ export default function App() {
                 onChange={(value) => setActiveColor('theme', value)}
                 info={
                   <>
-                    Updates the <code>{'<meta name="theme-color">'}</code> value. Safari 26 ignores this and samples page content instead.
+                    Updates the <code>{'<meta name="theme-color">'}</code> value. Safari 26 ignores this
+                    and samples page content instead. Browsers may ignore unsupported values.
                   </>
                 }
               />

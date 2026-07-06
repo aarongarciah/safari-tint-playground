@@ -91,7 +91,18 @@
             },
           },
         };
-        const isColor = (value) => /^#[0-9a-fA-F]{6}$/.test(value ?? '');
+        const normalizeColor = (value) => {
+          const trimmedValue = String(value ?? '').trim();
+
+          return trimmedValue || 'transparent';
+        };
+        const isColor = (value) => {
+          const color = normalizeColor(value);
+
+          return Boolean(window.CSS?.supports?.('color', color)) ||
+            color === 'transparent' ||
+            /^#[0-9a-fA-F]{6}$/.test(color);
+        };
         const normalizeDistance = (value) => {
           const numberValue = Number(value);
 
@@ -100,7 +111,7 @@
         const readColor = (params, key, fallback) => {
           const value = params.get(key);
 
-          return isColor(value) ? value : fallback;
+          return isColor(value) ? normalizeColor(value) : fallback;
         };
         const roomId = new URLSearchParams(window.location.search).get('id');
         let cachedParams = new URLSearchParams();
