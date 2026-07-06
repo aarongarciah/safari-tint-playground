@@ -71,6 +71,8 @@ const booleanParams = {
   dialogOpen: 'dialogOpen',
 } as const satisfies Record<string, keyof PlaygroundState>;
 
+const stateCachePrefix = 'safari-checker:state:';
+
 function isMode(value: unknown): value is Mode {
   return value === 'light' || value === 'dark';
 }
@@ -146,7 +148,38 @@ function readStateFromParams(params: URLSearchParams, base: PlaygroundState) {
   return next;
 }
 
+function getCurrentRoomId() {
+  return new URLSearchParams(window.location.search).get('id');
+}
+
+function getStateCacheKey(roomId: string) {
+  return `${stateCachePrefix}${roomId}`;
+}
+
+export function readCachedSerializedState(roomId: string) {
+  try {
+    return window.localStorage.getItem(getStateCacheKey(roomId));
+  } catch {
+    return null;
+  }
+}
+
+export function cacheSerializedState(roomId: string, serializedState: string) {
+  try {
+    window.localStorage.setItem(getStateCacheKey(roomId), serializedState);
+  } catch {
+    // Storage can be unavailable in private or locked-down browsing contexts.
+  }
+}
+
 export function readInitialState(): PlaygroundState {
+  const roomId = getCurrentRoomId();
+  const cachedState = roomId ? readCachedSerializedState(roomId) : null;
+
+  if (cachedState) {
+    return readStateFromQuery(cachedState);
+  }
+
   return structuredClone(defaultState);
 }
 

@@ -4,21 +4,21 @@ Playground for testing browser chrome tinting, safe area insets, fixed headers/f
 
 ## Local Development
 
-For normal UI work without Cloudflare sync:
+Run the Vite dev server:
 
 ```sh
 npm run dev
 ```
 
-This starts Vite only. The app works, but local sync will not connect because `/api/sync/:roomId` is served by the Cloudflare Worker.
+The dev server listens on your local network by default, so you can also open it from another device using the `Network` URL Vite prints, for example:
 
-For local cross-browser sync testing:
-
-```sh
-npm run preview:worker
+```text
+http://192.168.1.10:5173/?id=<room-id>
 ```
 
-Then open the Wrangler URL, usually `http://localhost:8787/`. This builds the app and runs `wrangler dev`, serving both the static Vite build and the local Durable Object/WebSocket backend.
+Copy the full URL, including `?id=...`, from the first device. Both devices must use the same room id to sync.
+
+The Cloudflare Vite plugin runs the React app and the Worker runtime in the same dev server. Vite handles React/HMR, while the Worker handles `/api/sync/:roomId` and the local Durable Object backend.
 
 Open the same URL in another browser or tab to test live state sharing.
 

@@ -58,14 +58,46 @@
             },
           },
         };
+        const isColor = (value) => /^#[0-9a-fA-F]{6}$/.test(value ?? '');
+        const normalizeDistance = (value) => {
+          const numberValue = Number(value);
+
+          return Number.isFinite(numberValue) ? Math.max(0, Math.round(numberValue)) : 0;
+        };
+        const readColor = (params, key, fallback) => {
+          const value = params.get(key);
+
+          return isColor(value) ? value : fallback;
+        };
+        const roomId = new URLSearchParams(window.location.search).get('id');
+        let cachedParams = new URLSearchParams();
+
+        try {
+          const cachedState = roomId ? window.localStorage.getItem(`safari-checker:state:${roomId}`) : null;
+          cachedParams = new URLSearchParams(cachedState ?? '');
+        } catch {
+          cachedParams = new URLSearchParams();
+        }
+
+        const cachedMode = cachedParams.get('mode');
         const state = {
-          mode: defaults.mode,
-          viewportFitCover: false,
-          headerTop: defaults.headerTop,
-          footerBottom: defaults.footerBottom,
+          mode: cachedMode === 'dark' ? 'dark' : defaults.mode,
+          viewportFitCover: cachedParams.get('vfc') === '1',
+          headerTop: normalizeDistance(cachedParams.get('headerTop') ?? defaults.headerTop),
+          footerBottom: normalizeDistance(cachedParams.get('footerBottom') ?? defaults.footerBottom),
           colors: {
-            light: { ...defaults.colors.light },
-            dark: { ...defaults.colors.dark },
+            light: {
+              page: readColor(cachedParams, 'bgL', defaults.colors.light.page),
+              header: readColor(cachedParams, 'headerL', defaults.colors.light.header),
+              footer: readColor(cachedParams, 'footerL', defaults.colors.light.footer),
+              theme: readColor(cachedParams, 'themeL', defaults.colors.light.theme),
+            },
+            dark: {
+              page: readColor(cachedParams, 'bgD', defaults.colors.dark.page),
+              header: readColor(cachedParams, 'headerD', defaults.colors.dark.header),
+              footer: readColor(cachedParams, 'footerD', defaults.colors.dark.footer),
+              theme: readColor(cachedParams, 'themeD', defaults.colors.dark.theme),
+            },
           },
         };
         if (state.mode !== 'dark') {

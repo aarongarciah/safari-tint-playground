@@ -1,9 +1,11 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { NumberField } from '@base-ui/react/number-field';
+import { Popover } from '@base-ui/react/popover';
 import { Dialog } from './components/Dialog';
 import { Drawer } from './components/Drawer';
 import {
   applyStateToDocument,
+  cacheSerializedState,
   defaultState,
   persistState,
   readInitialState,
@@ -81,18 +83,56 @@ function useSafeAreaInsets(viewportFitCover: boolean) {
   return insets;
 }
 
+function settleViewportScrollPosition() {
+  const frameIds: number[] = [];
+  const timeoutIds: number[] = [];
+  const scrollToInlineOrigin = () => {
+    const scrollingElement = document.scrollingElement;
+
+    scrollingElement?.scrollTo({ left: 0, top: scrollingElement.scrollTop });
+    document.documentElement.scrollLeft = 0;
+    document.body.scrollLeft = 0;
+    window.scrollTo({ left: 0, top: window.scrollY });
+  };
+  const reconcile = () => {
+    scrollToInlineOrigin();
+    document.documentElement.getBoundingClientRect();
+    scrollToInlineOrigin();
+  };
+
+  reconcile();
+  frameIds.push(window.requestAnimationFrame(reconcile));
+  frameIds.push(window.requestAnimationFrame(() => frameIds.push(window.requestAnimationFrame(reconcile))));
+  timeoutIds.push(window.setTimeout(reconcile, 50));
+  timeoutIds.push(window.setTimeout(reconcile, 250));
+
+  return () => {
+    frameIds.forEach((frameId) => window.cancelAnimationFrame(frameId));
+    timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
+  };
+}
+
 function ColorField({
   label,
   value,
   onChange,
+  info,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  info?: React.ReactNode;
 }) {
   return (
     <label className="field">
-      <span>{label}</span>
+      <span className="field-label-with-info">
+        <span>{label}</span>
+        {info ? (
+          <InfoTip label={`More information about ${label}`}>
+            {info}
+          </InfoTip>
+        ) : null}
+      </span>
       <input type="color" value={value} onChange={(event) => onChange(event.target.value)} />
       <code>{value}</code>
     </label>
@@ -118,6 +158,61 @@ function SwitchField({
         onChange={(event) => onChange(event.target.checked)}
       />
     </label>
+  );
+}
+
+function InfoTip({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Popover.Root>
+      <Popover.Trigger className="infotip-trigger" type="button" aria-label={label} openOnHover delay={150}>
+        <svg className="infotip-icon" viewBox="0 0 16 16" aria-hidden="true">
+          <circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" strokeWidth="1.25" />
+          <path d="M8 7v4" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.25" />
+          <circle cx="8" cy="4.75" r="0.75" fill="currentColor" />
+        </svg>
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Positioner side="top" sideOffset={8}>
+          <Popover.Popup className="infotip-popup">
+            {children}
+          </Popover.Popup>
+        </Popover.Positioner>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
+function ViewportFitField({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  const id = useId();
+
+  return (
+    <div className="switch">
+      <span className="switch-label-with-info">
+        <label htmlFor={id}>viewport-fit=cover</label>
+        <InfoTip label="More information about viewport-fit reload behavior">
+          Safari may need a reload to validate first-paint toolbar sampling after changing viewport fit.
+        </InfoTip>
+      </span>
+      <input
+        id={id}
+        type="checkbox"
+        role="switch"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+      />
+    </div>
   );
 }
 
@@ -184,7 +279,7 @@ function NumberFieldControl({
 
 function PlusIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" aria-hidden="true">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1" aria-hidden="true">
       <path d="M1.5 8h13M8 14.5v-13" />
     </svg>
   );
@@ -192,7 +287,7 @@ function PlusIcon() {
 
 function MinusIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" aria-hidden="true">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1" aria-hidden="true">
       <path d="M1.5 8h13" />
     </svg>
   );
@@ -208,7 +303,7 @@ function ColorSchemeIcon({ mode }: { mode: Mode }) {
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
-          strokeWidth="1"
+          strokeWidth="1.5"
         />
       </svg>
     );
@@ -222,14 +317,14 @@ function ColorSchemeIcon({ mode }: { mode: Mode }) {
         r="4"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1"
+        strokeWidth="1.5"
       />
       <path
         d="M12 2.5v3M12 18.5v3M21.5 12h-3M5.5 12h-3M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1M18.7 18.7l-2.1-2.1M7.4 7.4 5.3 5.3"
         fill="none"
         stroke="currentColor"
         strokeLinecap="round"
-        strokeWidth="1"
+        strokeWidth="1.5"
       />
     </svg>
   );
@@ -242,87 +337,111 @@ function getResetState(mode: Mode) {
   return nextState;
 }
 
+function getResetComparableState(state: typeof defaultState) {
+  return {
+    ...state,
+    drawerOpen: defaultState.drawerOpen,
+    dialogOpen: defaultState.dialogOpen,
+  };
+}
+
 export default function App() {
   const [state, setState] = useState(readInitialState);
   const [{ roomId: syncRoomId, created: createdSyncRoom }] = useState(ensureSyncRoomId);
   const activeColors = state.colors[state.mode];
   const insets = useSafeAreaInsets(state.viewportFitCover);
   const oppositeMode: Mode = state.mode === 'light' ? 'dark' : 'light';
-  const overlayOpen = state.drawerOpen || state.dialogOpen;
   const resetTarget = getResetState(state.mode);
-  const canReset = JSON.stringify(state) !== JSON.stringify(resetTarget);
+  const canReset = JSON.stringify(getResetComparableState(state)) !== JSON.stringify(resetTarget);
   const serializedState = serializeState(state);
+  const [syncReady, setSyncReady] = useState(false);
   const latestSerializedStateRef = useRef(serializedState);
   const createdSyncRoomRef = useRef(createdSyncRoom);
-  const canBroadcastSyncRef = useRef(false);
+  const lastSentStateRef = useRef<string | null>(null);
   const skipNextSyncBroadcastRef = useRef(false);
+  const previousViewportFitCoverRef = useRef(state.viewportFitCover);
   const shouldBroadcastReloadRef = useRef(wasPageReload() && !consumeRemoteRefresh(syncRoomId));
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    const viewportFitCoverChanged = previousViewportFitCoverRef.current !== state.viewportFitCover;
     latestSerializedStateRef.current = serializedState;
     applyStateToDocument(state);
+    cacheSerializedState(syncRoomId, serializedState);
     persistState();
-  }, [serializedState, state]);
 
-  useEffect(() => {
-    document.documentElement.style.setProperty(
-      '--scrollbar-lock-width',
-      overlayOpen ? `${window.innerWidth - document.documentElement.clientWidth}px` : '0px',
-    );
-  }, [overlayOpen]);
+    previousViewportFitCoverRef.current = state.viewportFitCover;
+
+    if (viewportFitCoverChanged) {
+      return settleViewportScrollPosition();
+    }
+  }, [serializedState, state, syncRoomId]);
 
   useEffect(() => {
     if (!syncRoomId) {
-      canBroadcastSyncRef.current = false;
+      setSyncReady(false);
       return;
     }
 
-    canBroadcastSyncRef.current = false;
+    setSyncReady(false);
+    lastSentStateRef.current = null;
 
     return connectSync(
       syncRoomId,
-      (query) => {
-        const nextState = readStateFromQuery(query);
+      {
+        onState: (query) => {
+          const nextState = readStateFromQuery(query);
 
-        setState((current) => {
-          if (serializeState(current) === serializeState(nextState)) {
-            return current;
+          setState((current) => {
+            if (serializeState(current) === serializeState(nextState)) {
+              return current;
+            }
+
+            skipNextSyncBroadcastRef.current = true;
+            return nextState;
+          });
+        },
+        onOpen: ({ isCreator }) => {
+          if (isCreator) {
+            sendState(latestSerializedStateRef.current);
+            lastSentStateRef.current = latestSerializedStateRef.current;
+            createdSyncRoomRef.current = false;
           }
 
-          skipNextSyncBroadcastRef.current = true;
-          return nextState;
-        });
+          if (shouldBroadcastReloadRef.current) {
+            shouldBroadcastReloadRef.current = false;
+            refreshRoom();
+          }
+        },
+        onStatus: (status) => {
+          setSyncReady(status === 'ready');
+        },
       },
-      () => {
-        if (createdSyncRoomRef.current) {
-          sendState(latestSerializedStateRef.current);
-          createdSyncRoomRef.current = false;
-        }
-
-        canBroadcastSyncRef.current = true;
-
-        if (shouldBroadcastReloadRef.current) {
-          shouldBroadcastReloadRef.current = false;
-          refreshRoom();
-        }
-      },
+      { isCreator: createdSyncRoomRef.current },
     );
   }, [syncRoomId]);
 
   useEffect(() => {
-    if (!syncRoomId || !canBroadcastSyncRef.current) {
+    if (!syncRoomId || !syncReady) {
       return;
     }
 
     if (skipNextSyncBroadcastRef.current) {
       skipNextSyncBroadcastRef.current = false;
+      lastSentStateRef.current = serializedState;
       return;
     }
 
-    const timeout = window.setTimeout(() => sendState(serializedState), 150);
+    if (serializedState === lastSentStateRef.current) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      sendState(serializedState);
+      lastSentStateRef.current = serializedState;
+    }, 150);
 
     return () => window.clearTimeout(timeout);
-  }, [serializedState, syncRoomId]);
+  }, [serializedState, syncRoomId, syncReady]);
 
   const setActiveColor = (colorKey: keyof ModeColors, value: string) => {
     setState((current) => setModeColor(current, colorKey, value));
@@ -340,7 +459,7 @@ export default function App() {
   const isInsetActive = (value: number | null) => (value ? 'true' : 'false');
 
   return (
-    <div className="app" data-overlay-open={overlayOpen}>
+    <div className="app">
       <header
         className="site-header"
         hidden={!state.headerVisible}
@@ -359,9 +478,20 @@ export default function App() {
             Paste the URL in another browser to compare how Safari and other browsers render toolbars and safe
             areas.
           </p>
-          <p>
-            All settings are synced across devices, tab refreshes as well. You might need a refresh to validate first-paint toolbar sampling after changing some of the settings.
-          </p>
+          <ul>
+            <li>
+              All settings are synced across devices.
+            </li>
+            <li>
+              Tab refreshes are synced across devices.
+            </li>
+            <li>
+              Different color values are stored for light and dark theme.
+            </li>
+            <li>
+              <strong>You might need a refresh after changing some of the settings</strong> for the browser to pick up the changes.
+            </li>
+          </ul>
         </section>
 
         <section className="panel" aria-label="Controls">
@@ -394,23 +524,24 @@ export default function App() {
                 label="Background"
                 value={activeColors.page}
                 onChange={(value) => setActiveColor('page', value)}
+                info="Sets the html and body elements background color."
               />
               <ColorField
                 label="Theme color meta"
                 value={activeColors.theme}
                 onChange={(value) => setActiveColor('theme', value)}
+                info={
+                  <>
+                    Updates the <code>{'<meta name="theme-color">'}</code> value. Safari 26 ignores this and samples page content instead.
+                  </>
+                }
               />
-              <SwitchField
-                label="viewport-fit=cover"
+              <ViewportFitField
                 checked={state.viewportFitCover}
                 onChange={(checked) =>
                   setState((current) => ({ ...current, viewportFitCover: checked }))
                 }
               />
-              <p className="note">
-                Safari may need a reload to validate first-paint toolbar sampling after changing
-                viewport fit.
-              </p>
             </section>
 
             <section className="control-card" aria-labelledby="header-controls-title">
@@ -425,17 +556,21 @@ export default function App() {
                 checked={state.headerVisible}
                 onChange={(checked) => setState((current) => ({ ...current, headerVisible: checked }))}
               />
-              <SwitchField
-                label="Fixed header"
-                checked={state.headerFixed}
-                onChange={(checked) => setState((current) => ({ ...current, headerFixed: checked }))}
-              />
-              {state.headerFixed ? (
-                <NumberFieldControl
-                  label="Top distance (px)"
-                  value={state.headerTop}
-                  onChange={(headerTop) => setState((current) => ({ ...current, headerTop }))}
-                />
+              {state.headerVisible ? (
+                <>
+                  <SwitchField
+                    label="Fixed header"
+                    checked={state.headerFixed}
+                    onChange={(checked) => setState((current) => ({ ...current, headerFixed: checked }))}
+                  />
+                  {state.headerFixed ? (
+                    <NumberFieldControl
+                      label="Top distance (px)"
+                      value={state.headerTop}
+                      onChange={(headerTop) => setState((current) => ({ ...current, headerTop }))}
+                    />
+                  ) : null}
+                </>
               ) : null}
             </section>
 
@@ -451,38 +586,42 @@ export default function App() {
                 checked={state.footerVisible}
                 onChange={(checked) => setState((current) => ({ ...current, footerVisible: checked }))}
               />
-              <SwitchField
-                label="Fixed footer"
-                checked={state.footerFixed}
-                onChange={(checked) => setState((current) => ({ ...current, footerFixed: checked }))}
-              />
-              {state.footerFixed ? (
-                <NumberFieldControl
-                  label="Bottom distance (px)"
-                  value={state.footerBottom}
-                  onChange={(footerBottom) => setState((current) => ({ ...current, footerBottom }))}
-                />
+              {state.footerVisible ? (
+                <>
+                  <SwitchField
+                    label="Fixed footer"
+                    checked={state.footerFixed}
+                    onChange={(checked) => setState((current) => ({ ...current, footerFixed: checked }))}
+                  />
+                  {state.footerFixed ? (
+                    <NumberFieldControl
+                      label="Bottom distance (px)"
+                      value={state.footerBottom}
+                      onChange={(footerBottom) => setState((current) => ({ ...current, footerBottom }))}
+                    />
+                  ) : null}
+                </>
               ) : null}
             </section>
-          </div>
-        </section>
 
-        <section className="surface" aria-labelledby="surface-title">
-          <h2 className="surface-title" id="surface-title">Safe area insets</h2>
-          <div className="safe-area-readout" aria-label="Safe area inset readout">
-            <span className="readout-item readout-top" data-active={isInsetActive(insets.top)}>
-              <code aria-label={describeInset('top')}>{formatInset(insets.top)}</code>
-            </span>
-            <span className="readout-item readout-right" data-active={isInsetActive(insets.right)}>
-              <code aria-label={describeInset('right')}>{formatInset(insets.right)}</code>
-            </span>
-            <span className="readout-square" aria-hidden="true" />
-            <span className="readout-item readout-bottom" data-active={isInsetActive(insets.bottom)}>
-              <code aria-label={describeInset('bottom')}>{formatInset(insets.bottom)}</code>
-            </span>
-            <span className="readout-item readout-left" data-active={isInsetActive(insets.left)}>
-              <code aria-label={describeInset('left')}>{formatInset(insets.left)}</code>
-            </span>
+            <section className="surface control-card" aria-labelledby="surface-title">
+              <h2 className="surface-title" id="surface-title">Safe area insets</h2>
+              <div className="safe-area-readout" aria-label="Safe area inset readout">
+                <span className="readout-item readout-top" data-active={isInsetActive(insets.top)}>
+                  <code aria-label={describeInset('top')}>{formatInset(insets.top)}</code>
+                </span>
+                <span className="readout-item readout-right" data-active={isInsetActive(insets.right)}>
+                  <code aria-label={describeInset('right')}>{formatInset(insets.right)}</code>
+                </span>
+                <span className="readout-square" aria-hidden="true" />
+                <span className="readout-item readout-bottom" data-active={isInsetActive(insets.bottom)}>
+                  <code aria-label={describeInset('bottom')}>{formatInset(insets.bottom)}</code>
+                </span>
+                <span className="readout-item readout-left" data-active={isInsetActive(insets.left)}>
+                  <code aria-label={describeInset('left')}>{formatInset(insets.left)}</code>
+                </span>
+              </div>
+            </section>
           </div>
         </section>
       </main>
