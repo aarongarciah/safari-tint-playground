@@ -70,8 +70,6 @@ const booleanParams = {
   footerFixed: 'footerFixed',
 } as const satisfies Record<string, keyof PlaygroundState>;
 
-const urlStateKeys = ['mode', ...Object.keys(colorParams), ...Object.keys(booleanParams)];
-
 function isMode(value: unknown): value is Mode {
   return value === 'light' || value === 'dark';
 }
@@ -122,16 +120,10 @@ function mergeState(source?: Partial<PlaygroundState> | null): PlaygroundState {
   };
 }
 
-function hasUrlState(params: URLSearchParams) {
-  return urlStateKeys.some((key) => params.has(key)) || params.has('headerTop') || params.has('footerBottom');
-}
-
-export function readInitialState(): PlaygroundState {
-  const params = new URLSearchParams(window.location.search);
-  const base = hasUrlState(params) ? defaultState : mergeState(readStoredState());
+function readStateFromParams(params: URLSearchParams, base: PlaygroundState) {
   const next = mergeState(base);
-
   const mode = params.get('mode');
+
   if (isMode(mode)) {
     next.mode = mode;
   }
@@ -160,6 +152,16 @@ export function readInitialState(): PlaygroundState {
   return next;
 }
 
+export function readInitialState(): PlaygroundState {
+  const hasRoomId = new URLSearchParams(window.location.search).has('id');
+
+  return hasRoomId ? defaultState : mergeState(readStoredState());
+}
+
+export function readStateFromQuery(query: string): PlaygroundState {
+  return readStateFromParams(new URLSearchParams(query), defaultState);
+}
+
 export function serializeState(state: PlaygroundState) {
   const params = new URLSearchParams();
   params.set('mode', state.mode);
@@ -183,10 +185,14 @@ export function serializeState(state: PlaygroundState) {
 }
 
 export function persistState(state: PlaygroundState) {
-  window.localStorage.setItem(storageKey, JSON.stringify(state));
+  const roomId = new URLSearchParams(window.location.search).get('id');
 
-  const query = serializeState(state);
-  const nextUrl = `${window.location.pathname}?${query}${window.location.hash}`;
+  if (!roomId) {
+    window.localStorage.setItem(storageKey, JSON.stringify(state));
+  }
+
+  const query = roomId ? `?id=${roomId}` : '';
+  const nextUrl = `${window.location.pathname}${query}${window.location.hash}`;
   window.history.replaceState(null, '', nextUrl);
 }
 

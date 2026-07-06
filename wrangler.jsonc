@@ -1,0 +1,24 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "safari-tint-playground",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-07-06",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "SYNC_ROOM",
+        "class_name": "SyncRoom"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["SyncRoom"]
+    }
+  ]
+}

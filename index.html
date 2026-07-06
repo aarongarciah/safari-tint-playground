@@ -60,7 +60,6 @@
             },
           },
         };
-        const isColor = (value) => /^#[0-9a-fA-F]{6}$/.test(value || '');
         const readStoredState = () => {
           try {
             return JSON.parse(localStorage.getItem(storageKey) || 'null');
@@ -69,55 +68,17 @@
           }
         };
         const params = new URLSearchParams(window.location.search);
-        const hasUrlState = [
-          'mode',
-          'vfc',
-          'bgL',
-          'bgD',
-          'headerL',
-          'headerD',
-          'headerTop',
-          'headerTransparent',
-          'footerL',
-          'footerD',
-          'footerBottom',
-          'themeL',
-          'themeD',
-        ].some((key) => params.has(key));
-        const stored = hasUrlState ? null : readStoredState();
+        const stored = params.has('id') ? null : readStoredState();
         const state = {
-          mode: params.get('mode') || stored?.mode || defaults.mode,
-          viewportFitCover:
-            params.get('vfc') === '1' || (!hasUrlState && stored?.viewportFitCover) || false,
-          headerTop: Math.max(
-            0,
-            Math.round(Number(params.get('headerTop') ?? stored?.headerTop ?? defaults.headerTop)),
-          ),
-          footerBottom: Math.max(
-            0,
-            Math.round(Number(params.get('footerBottom') ?? stored?.footerBottom ?? defaults.footerBottom)),
-          ),
+          mode: stored?.mode || defaults.mode,
+          viewportFitCover: stored?.viewportFitCover || false,
+          headerTop: Math.max(0, Math.round(Number(stored?.headerTop ?? defaults.headerTop))),
+          footerBottom: Math.max(0, Math.round(Number(stored?.footerBottom ?? defaults.footerBottom))),
           colors: {
             light: { ...defaults.colors.light, ...(stored?.colors?.light || {}) },
             dark: { ...defaults.colors.dark, ...(stored?.colors?.dark || {}) },
           },
         };
-        const colorParams = {
-          bgL: ['light', 'page'],
-          bgD: ['dark', 'page'],
-          headerL: ['light', 'header'],
-          headerD: ['dark', 'header'],
-          footerL: ['light', 'footer'],
-          footerD: ['dark', 'footer'],
-          themeL: ['light', 'theme'],
-          themeD: ['dark', 'theme'],
-        };
-        Object.entries(colorParams).forEach(([param, path]) => {
-          const value = params.get(param);
-          if (isColor(value)) {
-            state.colors[path[0]][path[1]] = value;
-          }
-        });
         if (state.mode !== 'dark') {
           state.mode = 'light';
         }

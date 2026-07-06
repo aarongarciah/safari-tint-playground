@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { NumberField } from '@base-ui/react/number-field';
 import { Dialog } from './components/Dialog';
 import { Drawer } from './components/Drawer';
@@ -7,10 +7,13 @@ import {
   defaultState,
   persistState,
   readInitialState,
+  readStateFromQuery,
+  serializeState,
   setModeColor,
   type Mode,
   type ModeColors,
 } from './state';
+import { connectSync, ensureSyncRoomId, sendState } from './sync';
 
 type Insets = {
   top: number | null;
@@ -234,6 +237,7 @@ function getResetState(mode: Mode) {
 
 export default function App() {
   const [state, setState] = useState(readInitialState);
+  const [{ roomId: syncRoomId, created: createdSyncRoom }] = useState(ensureSyncRoomId);
   const [openOverlays, setOpenOverlays] = useState({ drawer: false, dialog: false });
   const activeColors = state.colors[state.mode];
   const insets = useSafeAreaInsets(state.viewportFitCover);
@@ -241,11 +245,65 @@ export default function App() {
   const overlayOpen = openOverlays.drawer || openOverlays.dialog;
   const resetTarget = getResetState(state.mode);
   const canReset = JSON.stringify(state) !== JSON.stringify(resetTarget);
+  const serializedState = serializeState(state);
+  const latestSerializedStateRef = useRef(serializedState);
+  const createdSyncRoomRef = useRef(createdSyncRoom);
+  const canBroadcastSyncRef = useRef(false);
+  const skipNextSyncBroadcastRef = useRef(false);
 
   useEffect(() => {
+    latestSerializedStateRef.current = serializedState;
     applyStateToDocument(state);
     persistState(state);
-  }, [state]);
+  }, [serializedState, state]);
+
+  useEffect(() => {
+    if (!syncRoomId) {
+      canBroadcastSyncRef.current = false;
+      return;
+    }
+
+    canBroadcastSyncRef.current = false;
+
+    return connectSync(
+      syncRoomId,
+      (query) => {
+        const nextState = readStateFromQuery(query);
+
+        setState((current) => {
+          if (serializeState(current) === serializeState(nextState)) {
+            return current;
+          }
+
+          skipNextSyncBroadcastRef.current = true;
+          return nextState;
+        });
+      },
+      () => {
+        if (createdSyncRoomRef.current) {
+          sendState(latestSerializedStateRef.current);
+          createdSyncRoomRef.current = false;
+        }
+
+        canBroadcastSyncRef.current = true;
+      },
+    );
+  }, [syncRoomId]);
+
+  useEffect(() => {
+    if (!syncRoomId || !canBroadcastSyncRef.current) {
+      return;
+    }
+
+    if (skipNextSyncBroadcastRef.current) {
+      skipNextSyncBroadcastRef.current = false;
+      return;
+    }
+
+    const timeout = window.setTimeout(() => sendState(serializedState), 150);
+
+    return () => window.clearTimeout(timeout);
+  }, [serializedState, syncRoomId]);
 
   const setActiveColor = (colorKey: keyof ModeColors, value: string) => {
     setState((current) => setModeColor(current, colorKey, value));
@@ -315,14 +373,14 @@ export default function App() {
             <Drawer onOpenChange={(open) => setOverlayOpen('drawer', open)} />
             <Dialog onOpenChange={(open) => setOverlayOpen('dialog', open)} />
             {canReset ? (
-                <button
+              <button
                 className="button reset-button"
-                  type="button"
-                  onClick={resetState}
-                >
-                  Reset
-                </button>
-              ) : null}
+                type="button"
+                onClick={resetState}
+              >
+                Reset
+              </button>
+            ) : null}
           </div>
 
           <div className="controls">
@@ -368,19 +426,21 @@ export default function App() {
                 checked={state.headerFixed}
                 onChange={(checked) => setState((current) => ({ ...current, headerFixed: checked }))}
               />
-              <SwitchField
-                label="Transparent parent fix"
-                checked={state.headerTransparentParent}
-                onChange={(checked) =>
-                  setState((current) => ({ ...current, headerTransparentParent: checked }))
-                }
-              />
               {state.headerFixed ? (
-                <NumberFieldControl
-                  label="Top distance (px)"
-                  value={state.headerTop}
-                  onChange={(headerTop) => setState((current) => ({ ...current, headerTop }))}
-                />
+                <>
+                  <SwitchField
+                    label="Transparent parent fix"
+                    checked={state.headerTransparentParent}
+                    onChange={(checked) =>
+                      setState((current) => ({ ...current, headerTransparentParent: checked }))
+                    }
+                  />
+                  <NumberFieldControl
+                    label="Top distance (px)"
+                    value={state.headerTop}
+                    onChange={(headerTop) => setState((current) => ({ ...current, headerTop }))}
+                  />
+                </>
               ) : null}
             </section>
 
