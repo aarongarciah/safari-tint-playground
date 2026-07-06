@@ -30,8 +30,8 @@ const defaultModeColors: Record<Mode, ModeColors> = {
   },
   dark: {
     page: '#171717',
-    header: '#000000',
-    footer: '#000000',
+    header: '#171717',
+    footer: '#171717',
     theme: '#171717',
   },
 };
