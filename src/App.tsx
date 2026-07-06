@@ -204,7 +204,7 @@ function ViewportFitField({
       <span className="switch-label-with-info">
         <label htmlFor={id}>viewport-fit=cover</label>
         <InfoTip label="More information about viewport-fit reload behavior">
-          Safari may need a reload to validate first-paint toolbar sampling after changing viewport fit.
+          Updates the <code>{'<meta name="viewport">'}</code> value.
         </InfoTip>
       </span>
       <input
@@ -291,6 +291,17 @@ function MinusIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1" aria-hidden="true">
       <path d="M1.5 8h13" />
+    </svg>
+  );
+}
+
+function GitHubIcon() {
+  return (
+    <svg className="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 2C6.477 2 2 6.484 2 12.021c0 4.428 2.865 8.184 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.833.092-.647.35-1.088.636-1.338-2.22-.253-4.567-1.113-4.567-4.946 0-1.097.39-1.997 1.029-2.685-.103-.253-.446-1.336.098-2.685 0 0 .84-.269 2.749 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.026 2.747-1.026.546 1.377.202 2.394.1 2.685.64.699 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.919.678 1.856 0 1.338-.012 2.419-.012 2.749 0 .268.18.58.688.481C19.137 20.212 22 16.457 22 12.021 22 6.484 17.523 2 12 2z"
+        fill="currentColor"
+      />
     </svg>
   );
 }
@@ -627,6 +638,25 @@ export default function App() {
           </div>
         </section>
       </main>
+
+      <aside className="site-credit" aria-label="Project links">
+        <p className="site-credit-text">
+          made with <span role="img" aria-label="love">❤️</span> by{' '}
+          <a href="https://x.com/aarongarciah" target="_blank" rel="noopener noreferrer">
+            @aarongarciah
+          </a>
+        </p>
+        <span aria-hidden="true" style={{ userSelect: 'none' }}>/</span>
+        <a
+          className="site-credit-github"
+          href="https://github.com/aarongarciah/safari-tint-playground"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="View source on GitHub"
+        >
+          <GitHubIcon />
+        </a>
+      </aside>
 
       <footer className="site-footer" hidden={!state.footerVisible} data-fixed={state.footerFixed}>
         <div className="bar-inner">

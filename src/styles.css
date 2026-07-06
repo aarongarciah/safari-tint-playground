@@ -219,6 +219,62 @@ input:focus-visible {
   gap: 1rem;
 }
 
+.site-credit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: var(--layout-max-width);
+  margin: 0 auto;
+  padding: 0 var(--page-padding-right) 1.5rem var(--page-padding-left);
+  font-size: 0.875rem;
+  color: oklch(55.6% 0 0);
+}
+
+.app:has(.site-footer[data-fixed='true']:not([hidden])) .site-credit {
+  margin-bottom: calc(48px + var(--safe-area-bottom));
+}
+
+.app:has(.site-footer[hidden]) .site-credit {
+  padding-bottom: 2rem;
+}
+
+:root[data-theme='dark'] .site-credit {
+  color: oklch(70.8% 0 0);
+}
+
+.site-credit-text {
+  margin: 0;
+}
+
+.site-credit a {
+  color: inherit;
+  text-underline-offset: 2px;
+
+  &:hover {
+    color: oklch(26.9% 0 0deg);
+  }
+
+  :root[data-theme='dark'] &:hover {
+    color: oklch(97% 0 0deg);
+  }
+
+  &:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 1px;
+  }
+}
+
+.site-credit-github {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-left: -0.5rem;
+}
+
 .surface-title {
   margin: 0;
   font-size: 0.875rem;
@@ -354,7 +410,11 @@ input:focus-visible {
   border: 0;
   border-radius: 999px;
   background-color: transparent;
-  color: currentColor;
+  color: oklch(55.6% 0 0);
+}
+
+:root[data-theme='dark'] .infotip-trigger {
+  color: oklch(70.8% 0 0);
 }
 
 .infotip-icon {
@@ -365,12 +425,17 @@ input:focus-visible {
 
 @media (hover: hover) {
   .infotip-trigger:hover {
+    color: inherit;
     background-color: oklch(97% 0 0deg);
   }
 
   :root[data-theme='dark'] .infotip-trigger:hover {
     background-color: oklch(26.9% 0 0deg);
   }
+}
+
+.infotip-trigger:focus-visible {
+  color: inherit;
 }
 
 .infotip-trigger:active {
@@ -383,7 +448,7 @@ input:focus-visible {
 
 .infotip-popup {
   box-sizing: border-box;
-  max-width: 16rem;
+  max-width: 17rem;
   padding: 0.625rem 0.75rem;
   border: 1px solid currentColor;
   background-color: white;
@@ -391,6 +456,11 @@ input:focus-visible {
   line-height: 1.45;
   color: oklch(14.5% 0 0deg);
   box-shadow: 0.25rem 0.25rem 0 rgb(0 0 0 / 12%);
+}
+
+.infotip-popup code {
+  font-size: 0.9em;
+  white-space: nowrap;
 }
 
 :root[data-theme='dark'] .infotip-popup {
@@ -403,13 +473,16 @@ input:focus-visible {
   grid-column: 3;
   width: 2rem;
   height: 2rem;
-  padding: 0;
-  border: 1px solid black;
+  padding: 2px;
+  border: 1px solid oklch(14.5% 0 0deg);
   border-radius: 0;
-  outline: 1px solid white;
-  outline-offset: -2px;
-  background: transparent;
+  background-color: white;
   cursor: pointer;
+}
+
+:root[data-theme='dark'] .field input[type='color'] {
+  border-color: white;
+  background-color: oklch(14.5% 0 0deg);
 }
 
 .field input[type='color']::-webkit-color-swatch-wrapper {
@@ -418,13 +491,21 @@ input:focus-visible {
 }
 
 .field input[type='color']::-webkit-color-swatch {
-  border: 0;
+  border: 1px solid white;
   border-radius: 0;
 }
 
+:root[data-theme='dark'] .field input[type='color']::-webkit-color-swatch {
+  border-color: oklch(14.5% 0 0deg);
+}
+
 .field input[type='color']::-moz-color-swatch {
-  border: 0;
+  border: 1px solid white;
   border-radius: 0;
+}
+
+:root[data-theme='dark'] .field input[type='color']::-moz-color-swatch {
+  border-color: oklch(14.5% 0 0deg);
 }
 
 .field code {
