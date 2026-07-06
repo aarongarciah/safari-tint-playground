@@ -42,7 +42,6 @@
           mode: 'light',
           viewportFitCover: false,
           headerTop: 0,
-          headerTransparentParent: false,
           footerBottom: 0,
           colors: {
             light: {
@@ -75,6 +74,7 @@
         const activeColors = state.colors[state.mode];
         const root = document.documentElement;
         root.dataset.theme = state.mode;
+        root.dataset.viewportFitCover = String(state.viewportFitCover);
         root.style.colorScheme = state.mode;
         root.style.setProperty('--page-bg', activeColors.page);
         root.style.setProperty('--header-bg', activeColors.header);

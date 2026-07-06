@@ -13,7 +13,6 @@ export type PlaygroundState = {
   headerVisible: boolean;
   headerFixed: boolean;
   headerTop: number;
-  headerTransparentParent: boolean;
   footerVisible: boolean;
   footerFixed: boolean;
   footerBottom: number;
@@ -43,7 +42,6 @@ export const defaultState: PlaygroundState = {
   headerVisible: true,
   headerFixed: true,
   headerTop: 0,
-  headerTransparentParent: false,
   footerVisible: true,
   footerFixed: false,
   footerBottom: 0,
@@ -67,7 +65,6 @@ const booleanParams = {
   vfc: 'viewportFitCover',
   header: 'headerVisible',
   headerFixed: 'headerFixed',
-  headerTransparent: 'headerTransparentParent',
   footer: 'footerVisible',
   footerFixed: 'footerFixed',
   drawerOpen: 'drawerOpen',
@@ -164,7 +161,6 @@ export function serializeState(state: PlaygroundState) {
   params.set('header', state.headerVisible ? '1' : '0');
   params.set('headerFixed', state.headerFixed ? '1' : '0');
   params.set('headerTop', String(state.headerTop));
-  params.set('headerTransparent', state.headerTransparentParent ? '1' : '0');
   params.set('footer', state.footerVisible ? '1' : '0');
   params.set('footerFixed', state.footerFixed ? '1' : '0');
   params.set('footerBottom', String(state.footerBottom));
@@ -194,6 +190,7 @@ export function applyStateToDocument(state: PlaygroundState) {
   const body = document.body;
 
   root.dataset.theme = state.mode;
+  root.dataset.viewportFitCover = String(state.viewportFitCover);
   root.style.colorScheme = state.mode;
   root.style.setProperty('--page-bg', activeColors.page);
   root.style.setProperty('--header-bg', activeColors.header);

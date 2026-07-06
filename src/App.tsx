@@ -345,9 +345,7 @@ export default function App() {
         className="site-header"
         hidden={!state.headerVisible}
         data-fixed={state.headerFixed}
-        data-transparent-parent={state.headerTransparentParent}
       >
-        <div aria-hidden="true" className="bar-background" />
         <div className="bar-inner">
           <p className="bar-title">Header</p>
           <span className="bar-meta">{state.headerFixed ? 'fixed' : 'static'}</span>
@@ -358,9 +356,11 @@ export default function App() {
         <section className="hero" aria-labelledby="page-title">
           <h1 id="page-title">Safari Tint Playground</h1>
           <p>
-            Play with the settings to see how Safari and other browsers render browser chrome and safe areas.
-            Paste the URL in another browser to compare how Safari and other browsers render browser chrome and safe
+            Paste the URL in another browser to compare how Safari and other browsers render toolbars and safe
             areas.
+          </p>
+          <p>
+            All settings are synced across devices, tab refreshes as well. You might need a refresh to validate first-paint toolbar sampling after changing some of the settings.
           </p>
         </section>
 
@@ -431,20 +431,11 @@ export default function App() {
                 onChange={(checked) => setState((current) => ({ ...current, headerFixed: checked }))}
               />
               {state.headerFixed ? (
-                <>
-                  <SwitchField
-                    label="Transparent parent fix"
-                    checked={state.headerTransparentParent}
-                    onChange={(checked) =>
-                      setState((current) => ({ ...current, headerTransparentParent: checked }))
-                    }
-                  />
-                  <NumberFieldControl
-                    label="Top distance (px)"
-                    value={state.headerTop}
-                    onChange={(headerTop) => setState((current) => ({ ...current, headerTop }))}
-                  />
-                </>
+                <NumberFieldControl
+                  label="Top distance (px)"
+                  value={state.headerTop}
+                  onChange={(headerTop) => setState((current) => ({ ...current, headerTop }))}
+                />
               ) : null}
             </section>
 

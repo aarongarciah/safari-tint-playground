@@ -1,6 +1,10 @@
 :root {
   --content-max-width: 68rem;
   --page-inline-padding: 1rem;
+  --safe-area-left: 0px;
+  --safe-area-right: 0px;
+  --page-padding-left: calc(var(--page-inline-padding) + var(--safe-area-left));
+  --page-padding-right: calc(var(--page-inline-padding) + var(--safe-area-right));
   --shell-max-width: 70rem;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -10,6 +14,11 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+:root[data-viewport-fit-cover='true'] {
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
 }
 
 :root[data-theme='dark'] {
@@ -83,24 +92,15 @@ input:focus-visible {
 .site-header {
   top: var(--header-top, 0px);
   height: calc(48px + env(safe-area-inset-top, 0px));
-  padding: env(safe-area-inset-top, 0px) var(--page-inline-padding) 0;
+  padding: env(safe-area-inset-top, 0px) var(--page-padding-right) 0 var(--page-padding-left);
   border-bottom: 1px solid;
   background-color: var(--header-bg);
-}
-
-.site-header[data-transparent-parent='true'] {
-  overflow: hidden;
-  background-color: transparent;
-}
-
-.site-header[data-transparent-parent='true'][data-fixed='false'] {
-  position: relative;
 }
 
 .site-footer {
   bottom: var(--footer-bottom, 0px);
   height: calc(48px + env(safe-area-inset-bottom, 0px));
-  padding: 0 var(--page-inline-padding) env(safe-area-inset-bottom, 0px);
+  padding: 0 var(--page-padding-right) env(safe-area-inset-bottom, 0px) var(--page-padding-left);
   border-top: 1px solid;
   background-color: var(--footer-bg);
 }
@@ -131,18 +131,6 @@ input:focus-visible {
   gap: 1rem;
 }
 
-.bar-background {
-  display: none;
-}
-
-.site-header[data-transparent-parent='true'] .bar-background {
-  position: absolute;
-  inset: 0;
-  display: block;
-  background-color: var(--header-bg);
-  pointer-events: none;
-}
-
 .bar-title {
   margin: 0;
   font-size: 0.875rem;
@@ -159,13 +147,17 @@ input:focus-visible {
   width: min(100%, var(--shell-max-width));
   flex: 1;
   margin: 0 auto;
-  padding: 5.5rem var(--page-inline-padding) 6rem;
+  padding: 5.5rem var(--page-padding-right) 6rem var(--page-padding-left);
 }
 
 @media (width >= 40rem) {
   :root {
     --page-inline-padding: 2rem;
     --shell-max-width: 72rem;
+  }
+
+  :root[data-viewport-fit-cover='true'] {
+    --page-inline-padding: 1rem;
   }
 }
 
@@ -576,7 +568,7 @@ input:focus-visible {
 .surface {
   display: grid;
   gap: 0.5rem;
-  margin-top: 3rem;
+  margin-top: 2rem;
 }
 
 .safe-area-readout {
