@@ -296,27 +296,7 @@ input:focus-visible {
   padding-block: 0.875rem;
 }
 
-.control-card::after {
-  content: none;
-  position: absolute;
-  top: 50%;
-  right: -2.5rem;
-  width: 1px;
-  height: 50%;
-  background-color: oklch(55.6% 0 0);
-  transform: translate(50%, -50%);
-}
-
-:root[data-theme='dark'] .control-card::after {
-  background-color: oklch(70.8% 0 0);
-}
-
 @media (width >= 64rem) {
-  .control-card:nth-child(1)::after,
-  .control-card:nth-child(2)::after {
-    content: '';
-  }
-
   .surface {
     grid-column: 1 / -1;
   }
@@ -331,30 +311,16 @@ input:focus-visible {
     padding-block: 1.25rem;
   }
 
-  .control-card:nth-child(odd)::after {
-    content: '';
-  }
 }
 
 @media (width < 48rem) {
   .controls {
     grid-template-columns: 1fr;
-    gap: 2rem;
+    gap: 1rem;
   }
 
   .control-card {
     padding-block: 1.25rem;
-  }
-
-  .control-card:not(:last-child)::after {
-    content: '';
-    top: auto;
-    right: auto;
-    bottom: -1rem;
-    left: 50%;
-    width: 6rem;
-    height: 1px;
-    transform: translate(-50%, 50%);
   }
 }
 
