@@ -13,8 +13,9 @@
     }
   </style>
   <rect width="64" height="64" fill="transparent" />
-  <rect x="8" y="0" width="48" height="64" fill="var(--body)" />
-  <rect x="8" y="0" width="48" height="12" fill="var(--chrome)" />
-  <rect x="8" y="52" width="48" height="12" fill="var(--chrome)" />
-  <path d="M8 0H56V64H8Z" fill="none" stroke="var(--chrome)" stroke-width="3" />
+  <rect x="10" y="2" width="44" height="60" fill="var(--body)" />
+  <path d="M10 2H54V62H10Z" fill="none" stroke="var(--chrome)" stroke-width="4" />
+  <rect x="23" y="9" width="18" height="7" rx="3.5" fill="var(--chrome)" />
+  <rect x="17" y="48" width="30" height="8" rx="4" fill="var(--chrome)" />
+  <rect x="23" y="51" width="18" height="2" rx="1" fill="var(--body)" />
 </svg>
