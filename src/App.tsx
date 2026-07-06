@@ -123,19 +123,21 @@ function ColorField({
   onChange: (value: string) => void;
   info?: React.ReactNode;
 }) {
+  const id = useId();
+
   return (
-    <label className="field">
+    <div className="field">
       <span className="field-label-with-info">
-        <span>{label}</span>
+        <label htmlFor={id}>{label}</label>
         {info ? (
           <InfoTip label={`More information about ${label}`}>
             {info}
           </InfoTip>
         ) : null}
       </span>
-      <input type="color" value={value} onChange={(event) => onChange(event.target.value)} />
+      <input id={id} type="color" value={value} onChange={(event) => onChange(event.target.value)} />
       <code>{value}</code>
-    </label>
+    </div>
   );
 }
 
