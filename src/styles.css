@@ -453,7 +453,6 @@ input:focus-visible {
   appearance: none;
   -webkit-appearance: none;
   background-color: white;
-  transition: background-color 150ms ease;
 }
 
 :root[data-theme='dark'] .switch input[type='checkbox'] {
@@ -469,9 +468,6 @@ input:focus-visible {
   width: 0.875rem;
   height: 0.875rem;
   background-color: oklch(14.5% 0 0deg);
-  transition:
-    transform 150ms ease,
-    background-color 150ms ease;
 }
 
 :root[data-theme='dark'] .switch input[type='checkbox']::before {
@@ -519,6 +515,7 @@ input:focus-visible {
   display: flex;
   flex: 0 0 auto;
   height: 2rem;
+  border: 1px solid oklch(14.5% 0 0deg);
 }
 
 .number-field-input {
@@ -527,7 +524,8 @@ input:focus-visible {
   height: 100%;
   margin: 0;
   padding: 0 0.5rem;
-  border: 1px solid oklch(14.5% 0 0deg);
+  border: 0;
+  border-left: 1px solid oklch(14.5% 0 0deg);
   border-radius: 0;
   background-color: white;
   font-family: inherit;
@@ -546,8 +544,12 @@ input:focus-visible {
   }
 }
 
+:root[data-theme='dark'] .number-field-group {
+  border-color: white;
+}
+
 :root[data-theme='dark'] .number-field-input {
-  border: 1px solid white;
+  border-left-color: white;
   background-color: oklch(14.5% 0 0deg);
   color: white;
 }
@@ -571,7 +573,8 @@ input:focus-visible {
   height: 100%;
   margin: 0;
   padding: 0;
-  border: 1px solid oklch(14.5% 0 0deg);
+  border: 0;
+  border-left: 1px solid oklch(14.5% 0 0deg);
   border-radius: 0;
   outline: 0;
   background-color: white;
@@ -581,11 +584,7 @@ input:focus-visible {
   user-select: none;
 }
 
-.number-field-stepper:first-child {
-  border-right: 0;
-}
-
-.number-field-stepper:last-child {
+.number-field-group > :first-child {
   border-left: 0;
 }
 
@@ -596,7 +595,7 @@ input:focus-visible {
 }
 
 :root[data-theme='dark'] .number-field-stepper {
-  border: 1px solid white;
+  border-left-color: white;
   background-color: oklch(14.5% 0 0deg);
   color: white;
 }
