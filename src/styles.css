@@ -167,7 +167,7 @@ input:focus-visible {
   container-type: inline-size;
   flex: 1;
   margin: 0 auto;
-  padding: 5.5rem var(--page-padding-right) 6rem var(--page-padding-left);
+  padding: 5.5rem var(--page-padding-right) 3rem var(--page-padding-left);
 }
 
 @media (width >= 40rem) {
