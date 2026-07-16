@@ -72,6 +72,19 @@ const booleanParams = {
 } as const satisfies Record<string, keyof PlaygroundState>;
 
 const stateCachePrefix = 'safari-checker:state:';
+const darkTextColor = 'oklch(14.5% 0 0deg)';
+const lightTextColor = '#ffffff';
+const lightnessThreshold = 0.62;
+const mutedForegroundMix = 0.62;
+
+type RgbColor = {
+  r: number;
+  g: number;
+  b: number;
+  a: number;
+};
+
+let colorCanvasContext: CanvasRenderingContext2D | null | undefined;
 
 function isMode(value: unknown): value is Mode {
   return value === 'light' || value === 'dark';
@@ -91,6 +104,100 @@ export function isCssColor(value: unknown): value is string {
   const color = normalizeColorInput(value);
 
   return Boolean(window.CSS?.supports?.('color', color));
+}
+
+function getColorCanvasContext() {
+  if (colorCanvasContext !== undefined) {
+    return colorCanvasContext;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  colorCanvasContext = canvas.getContext('2d', { willReadFrequently: true });
+
+  return colorCanvasContext;
+}
+
+function resolveCssColor(value: string, fallback: RgbColor): RgbColor {
+  const color = normalizeColorInput(value);
+
+  if (color === 'transparent') {
+    return fallback;
+  }
+
+  const context = getColorCanvasContext();
+
+  if (!context) {
+    return fallback;
+  }
+
+  context.clearRect(0, 0, 1, 1);
+  context.fillStyle = 'rgba(0, 0, 0, 0)';
+  context.fillStyle = color;
+  context.fillRect(0, 0, 1, 1);
+
+  const [r, g, b, alpha] = context.getImageData(0, 0, 1, 1).data;
+  const a = alpha / 255;
+
+  if (a === 0) {
+    return fallback;
+  }
+
+  if (a === 1) {
+    return { r, g, b, a };
+  }
+
+  return {
+    r: Math.round(r * a + fallback.r * (1 - a)),
+    g: Math.round(g * a + fallback.g * (1 - a)),
+    b: Math.round(b * a + fallback.b * (1 - a)),
+    a: 1,
+  };
+}
+
+function linearizeSrgbChannel(channel: number) {
+  const value = channel / 255;
+
+  return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+}
+
+function getPerceptualLightness(color: RgbColor) {
+  const r = linearizeSrgbChannel(color.r);
+  const g = linearizeSrgbChannel(color.g);
+  const b = linearizeSrgbChannel(color.b);
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+
+  return 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s;
+}
+
+function getTextColorForBackground(background: RgbColor) {
+  return getPerceptualLightness(background) >= lightnessThreshold ? darkTextColor : lightTextColor;
+}
+
+function mixRgbColors(foreground: RgbColor, background: RgbColor, foregroundAmount: number) {
+  const backgroundAmount = 1 - foregroundAmount;
+
+  return {
+    r: Math.round(foreground.r * foregroundAmount + background.r * backgroundAmount),
+    g: Math.round(foreground.g * foregroundAmount + background.g * backgroundAmount),
+    b: Math.round(foreground.b * foregroundAmount + background.b * backgroundAmount),
+    a: 1,
+  };
+}
+
+function formatRgbColor(color: RgbColor) {
+  return `rgb(${color.r} ${color.g} ${color.b})`;
+}
+
+function getMutedTextColorForBackground(background: RgbColor) {
+  const foregroundColor = getTextColorForBackground(background) === lightTextColor
+    ? { r: 255, g: 255, b: 255, a: 1 }
+    : { r: 23, g: 23, b: 23, a: 1 };
+
+  return formatRgbColor(mixRgbColors(foregroundColor, background, mutedForegroundMix));
 }
 
 function normalizeDistance(value: unknown) {
@@ -231,6 +338,15 @@ export function persistState() {
 
 export function applyStateToDocument(state: PlaygroundState) {
   const activeColors = state.colors[state.mode];
+  const defaultPageBackground = resolveCssColor(defaultModeColors[state.mode].page, {
+    r: state.mode === 'dark' ? 23 : 255,
+    g: state.mode === 'dark' ? 23 : 255,
+    b: state.mode === 'dark' ? 23 : 255,
+    a: 1,
+  });
+  const pageBackground = resolveCssColor(activeColors.page, defaultPageBackground);
+  const headerBackground = resolveCssColor(activeColors.header, pageBackground);
+  const footerBackground = resolveCssColor(activeColors.footer, pageBackground);
   const root = document.documentElement;
   const body = document.body;
 
@@ -238,9 +354,15 @@ export function applyStateToDocument(state: PlaygroundState) {
   root.dataset.viewportFitCover = String(state.viewportFitCover);
   root.style.colorScheme = state.mode;
   root.style.setProperty('--page-bg', activeColors.page);
+  root.style.setProperty('--page-fg', getTextColorForBackground(pageBackground));
+  root.style.setProperty('--page-muted-fg', getMutedTextColorForBackground(pageBackground));
   root.style.setProperty('--header-bg', activeColors.header);
+  root.style.setProperty('--header-fg', getTextColorForBackground(headerBackground));
+  root.style.setProperty('--header-muted-fg', getMutedTextColorForBackground(headerBackground));
   root.style.setProperty('--header-top', `${state.headerTop}px`);
   root.style.setProperty('--footer-bg', activeColors.footer);
+  root.style.setProperty('--footer-fg', getTextColorForBackground(footerBackground));
+  root.style.setProperty('--footer-muted-fg', getMutedTextColorForBackground(footerBackground));
   root.style.setProperty('--footer-bottom', `${state.footerBottom}px`);
   body.style.backgroundColor = activeColors.page;
 
