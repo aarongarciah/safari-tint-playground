@@ -576,6 +576,26 @@ input:focus-visible {
   border-radius: 0;
 }
 
+@media (width < 22.5rem) {
+  .field {
+    grid-template-columns: minmax(0, 1fr) 2rem;
+    column-gap: 0;
+  }
+
+  .field-label-with-info {
+    grid-column: 1 / -1;
+    margin-right: 0;
+  }
+
+  .color-text-input {
+    grid-column: 1;
+  }
+
+  .color-swatch {
+    grid-column: 2;
+  }
+}
+
 .switch input[type='checkbox'] {
   position: relative;
   box-sizing: border-box;
