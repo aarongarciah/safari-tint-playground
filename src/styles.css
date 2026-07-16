@@ -10,6 +10,7 @@
   --layout-max-width: calc(var(--content-max-width) + var(--page-padding-left) + var(--page-padding-right));
   --page-fg: oklch(14.5% 0 0deg);
   --page-muted-fg: oklch(55.6% 0 0);
+  --page-separator-color: oklch(87% 0 0);
   --header-fg: var(--page-fg);
   --header-muted-fg: var(--page-muted-fg);
   --footer-fg: var(--page-fg);
@@ -34,6 +35,7 @@
 :root[data-theme='dark'] {
   --page-fg: #ffffff;
   --page-muted-fg: oklch(70.8% 0 0);
+  --page-separator-color: oklch(37.9% 0 0);
   --header-fg: var(--page-fg);
   --header-muted-fg: var(--page-muted-fg);
   --footer-fg: var(--page-fg);
@@ -310,8 +312,28 @@ input:focus-visible {
     column-gap: 3rem;
   }
 
+  .control-card:not(.surface):not(:nth-of-type(3))::after {
+    content: '';
+    position: absolute;
+    top: 0.875rem;
+    right: -1.5rem;
+    bottom: 0.875rem;
+    width: 1px;
+    background-color: var(--page-separator-color);
+  }
+
   .surface {
     grid-column: 1 / -1;
+  }
+}
+
+@media (width > 71.875rem) {
+  .controls {
+    column-gap: 5rem;
+  }
+
+  .control-card:not(.surface):not(:nth-of-type(3))::after {
+    right: -2.5rem;
   }
 }
 
@@ -324,6 +346,15 @@ input:focus-visible {
     padding-block: 1.25rem;
   }
 
+  .control-card:nth-of-type(odd)::after {
+    content: '';
+    position: absolute;
+    top: 0.875rem;
+    right: -2.5rem;
+    bottom: 0.875rem;
+    width: 1px;
+    background-color: var(--page-separator-color);
+  }
 }
 
 @media (width < 48rem) {
@@ -543,26 +574,6 @@ input:focus-visible {
   opacity: 0;
   cursor: pointer;
   border-radius: 0;
-}
-
-@media (width < 24rem) {
-  .field {
-    grid-template-columns: minmax(0, 1fr) 2rem;
-    column-gap: 0;
-  }
-
-  .field-label-with-info {
-    grid-column: 1 / -1;
-    margin-right: 0;
-  }
-
-  .color-text-input {
-    grid-column: 1;
-  }
-
-  .color-swatch {
-    grid-column: 2;
-  }
 }
 
 .switch input[type='checkbox'] {

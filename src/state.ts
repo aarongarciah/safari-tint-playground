@@ -76,6 +76,7 @@ const darkTextColor = 'oklch(14.5% 0 0deg)';
 const lightTextColor = '#ffffff';
 const lightnessThreshold = 0.62;
 const mutedForegroundMix = 0.62;
+const separatorMutedForegroundMix = 0.3;
 
 type RgbColor = {
   r: number;
@@ -198,6 +199,20 @@ function getMutedTextColorForBackground(background: RgbColor) {
     : { r: 23, g: 23, b: 23, a: 1 };
 
   return formatRgbColor(mixRgbColors(foregroundColor, background, mutedForegroundMix));
+}
+
+function getSeparatorColorForBackground(background: RgbColor) {
+  const foregroundColor = getTextColorForBackground(background) === lightTextColor
+    ? { r: 255, g: 255, b: 255, a: 1 }
+    : { r: 23, g: 23, b: 23, a: 1 };
+
+  return formatRgbColor(
+    mixRgbColors(
+      foregroundColor,
+      background,
+      mutedForegroundMix * separatorMutedForegroundMix,
+    ),
+  );
 }
 
 function normalizeDistance(value: unknown) {
@@ -356,6 +371,7 @@ export function applyStateToDocument(state: PlaygroundState) {
   root.style.setProperty('--page-bg', activeColors.page);
   root.style.setProperty('--page-fg', getTextColorForBackground(pageBackground));
   root.style.setProperty('--page-muted-fg', getMutedTextColorForBackground(pageBackground));
+  root.style.setProperty('--page-separator-color', getSeparatorColorForBackground(pageBackground));
   root.style.setProperty('--header-bg', activeColors.header);
   root.style.setProperty('--header-fg', getTextColorForBackground(headerBackground));
   root.style.setProperty('--header-muted-fg', getMutedTextColorForBackground(headerBackground));
